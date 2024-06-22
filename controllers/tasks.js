@@ -1,62 +1,48 @@
 const task = require('../models/task');
-const getAllTask = async (req, res) => {
-  try {
-    let tasks = await task.find({});
-    res.status(200).json(tasks);
-  } catch (e) {
-    res.status(500).json({ message: e });
-  }
-};
+const asyncWrapper = require('../middleware/asyncWrapper');
+const { createCustumError } = require('../errors/custumerrors');
+const getAllTask = asyncWrapper(async (req, res) => {
+  let tasks = await task.find({});
+  res.status(200).json(tasks);
+});
 
-const postTask = async (req, res) => {
-  try {
-    const tasks = await task.create(req.body);
-    res.status(201).json({ tasks });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({ message: e });
-  }
-};
-const updateTask = async (req, res) => {
+const postTask = asyncWrapper(async (req, res) => {
+  console.log(req.body);
+  const tasks = await task.create(req.body);
+  res.status(201).json({ tasks });
+});
+const updateTask = asyncWrapper(async (req, res) => {
   const { id } = req.params;
-  try {
-    const tasks = await task.findOneAndUpdate({ _id: id }, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!tasks) {
-      return res.status(404).json({ message: 'no task found' });
-    }
-    res.status(200).json({ tasks });
-  } catch (e) {
-    res.status(500).json({ message: e });
+  const tasks = await task.findOneAndUpdate({ _id: id }, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  if (!tasks) {
+    return next(createCustumError('Id not found custum', 404));
+    // return res.status(404).json({ message: 'no task found' });
   }
-};
-const deleteTask = async (req, res) => {
+  res.status(200).json({ tasks });
+});
+const deleteTask = asyncWrapper(async (req, res) => {
   const { id } = req.params;
-  try {
-    const tasks = await task.findOneAndDelete({ _id: id });
-    if (!tasks) {
-      return res.status(404).json({ message: 'no task found' });
-    }
-    res.status(200).json({ tasks });
-  } catch (e) {
-    res.status(500).json({ message: e });
+
+  const tasks = await task.findOneAndDelete({ _id: id });
+  if (!tasks) {
+    return next(createCustumError('Id not found custum', 404));
+    // return res.status(404).json({ message: 'no task found' });
   }
-  res.send('delete task');
-};
-const getSingleTask = async (req, res) => {
+  res.status(200).json({ tasks });
+});
+const getSingleTask = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
-  try {
-    const tasks = await task.findOne({ _id: id });
-    if (!tasks) {
-      return res.status(404).json({ message: 'Id not found' });
-    }
-    res.status(200).json({ tasks });
-  } catch (e) {
-    res.status(500).json({ message: e });
+
+  const tasks = await task.findOne({ _id: id });
+  if (!tasks) {
+    return next(createCustumError('Id not found custum GET', 404));
+    // return res.status(404).json({ message: 'Id not found' });
   }
-};
+  res.status(200).json({ tasks });
+});
 
 module.exports = {
   getAllTask,
